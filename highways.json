@@ -899,6 +899,14 @@
       "id": 61,
       "x": 3525,
       "z": -9726
+    },
+    {
+      "lines": {},
+      "name": "Igloolik",
+      "id": 62,
+      "x": 46968,
+      "z": 29404,
+      "type": "hub"
     }
   ],
   "lines": {
@@ -1522,6 +1530,29 @@
               ],
               7
             ]
+          }
+        }
+      }
+    },
+    "SolarCiv International Railway Project In-House Line": {
+      "Antarctic-Oceanic Line": {
+        "prefix": "",
+        "code": "",
+        "color": "0080ff",
+        "y": 0,
+        "branches": {
+          "Main line": {
+            "vertices": [
+              [
+                46968,
+                29404
+              ],
+              [
+                43921,
+                11194
+              ]
+            ],
+            "stations": []
           }
         }
       }
