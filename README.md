@@ -5,7 +5,7 @@ This is a tool that aims to give information on ice highway stations and lines a
 # Adding lines to the map (direct push commit method) tutorial
 
 > [!NOTE]
-> You can also request the additions to the map via join SolarCiv International Railway Project Discord Server and then make a request there. Thank you
+> You can also request the additions to the map via the SolarCiv International Railway Project Discord Server and then make a request there. Thank you.
 
 ***PLEASE READ IF YOU ARE ADDING STATIONS AND LINES***
 

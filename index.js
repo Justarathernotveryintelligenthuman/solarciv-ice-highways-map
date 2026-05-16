@@ -2,7 +2,7 @@ const projection = 128;
 
 const proxyURL = 'https://api.codetabs.com/v1/proxy/?quest='
 const mapURL = 'https://map.solarciv.com/tiles'
-const highwaysURL = 'https://raw.githubusercontent.com/XiLeF2211/ice-highways-map/refs/heads/main/highways.json'
+const highwaysURL = 'https://raw.githubusercontent.com/nokteholda/solarciv-ice-highways-map/refs/heads/main/highways.json'
 const netherHighwaysURL = 'https://raw.githubusercontent.com/XiLeF2211/ice-highways-map/refs/heads/main/netherHighways.json'
 
 let highwayData;
@@ -63,7 +63,6 @@ const layerControl = L.control.layers({
 let coordinateController = document.querySelector('.leaflet-mousecoords');
 // Show coordinates
 map.on("mousemove", function (e) {
-    // Get x and z coords
     let xCoord = projection * e.latlng.lng.toFixed(2)
     xCoord = xCoord > 0 ? Math.floor(xCoord) : Math.ceil(xCoord)
 
@@ -153,14 +152,16 @@ async function renderTowns() {
 
     const regions = []
 
-    // Collect info about towns
     for (const town of data[0].markers) {
         if (town.type != 'polygon') continue
 
-        const townName = town.tooltip.match(/<b>(.*)<\/b>/)[1]
+        // FIX: guard against tooltips that don't match the expected <b>name</b> format
+        const townNameMatch = town.tooltip.match(/<b>(.*)<\/b>/)
+        if (!townNameMatch) continue
+        const townName = townNameMatch[1]
+
         const nation = town.tooltip.match(/\(\b(?:Member|Capital)\b of (.*)\)\n/)?.at(1)
 
-        // Might need capital? maybe
         let isCapital = town.tooltip.search(/\(Capital of /)
         const fill = town.fillColor
         const outline = town.color ?? fill
@@ -182,7 +183,6 @@ async function renderTowns() {
         }
     }
 
-    // Place down every collected town
     for (const region of regions) {
         L.polygon(region.vertices, {
             fillColor: region.fill,
@@ -203,7 +203,6 @@ async function renderLines(dataset, mod) {
     for (const company of Object.keys(dataset.lines)) {
         for (const line of Object.keys(dataset.lines[company])) {
             const lineData = dataset.lines[company][line]
-            // Modify vertices
             for (const branch of Object.keys(lineData.branches)) {
                 const vertices = []
                 for (const vertex of lineData.branches[branch].vertices) {
@@ -262,10 +261,11 @@ async function renderLines(dataset, mod) {
                         concurrencyContainer.appendChild(ogLine)
                         concurrencyContainer.appendChild(concurrentWith)
 
+                        // FIX: offset was 1 (invisible); use 5 pixels to visually separate concurrent lines
                         L.polyline(concurrentVertices, {
                             color: '#' + lineData.color,
                             weight: 5,
-                            offset: 1
+                            offset: 5
                         })
                             .addTo(linesLayer)
                             .bindPopup(concurrencyContainer)
@@ -317,7 +317,6 @@ async function renderStations(dataset, mod) {
             const polygons = []
             for (const region of station.areas) {
                 polygons.push(
-                    // Flipped coordinates because that's how GeoJSON works in contrast to Leaflet :p
                     turf.polygon(
                         [[
                             [region[0][0] / projection, -region[0][1] / projection],
@@ -464,12 +463,13 @@ function showStation(station) {
         document.getElementById('elevator-ys').innerHTML = `Elevator goes from ${station.y1} to ${station.y2}`
     }
     document.getElementById('station-codes').innerHTML = ''
-    for (company in station.lines) {
+    // FIX: was using bare `for (company in ...)` which leaks implicit globals; use for...of + Object.keys
+    for (const company of Object.keys(station.lines)) {
         console.log(company);
         let companyName = document.createElement('h3')
         companyName.textContent = company
         document.getElementById('station-codes').appendChild(companyName)
-        for (line in station.lines[company]) {
+        for (const line of Object.keys(station.lines[company])) {
             console.log(line);
             let code = document.createElement('p')
             let temp = [company, line, currentData.lines[company][line]]
@@ -587,16 +587,26 @@ function openFilter(filterName) {
 }
 
 function findPath(start, end) {
-    const path = pathfinder.pathfind(start, end);
-    let prevLine = "";
-    for (let station of path[0]) {
+    document.getElementById('path-list').innerHTML = '';
+    const result = pathfinder.pathfind(start, end);
+    // FIX: guard for unreachable destination before accessing result
+    if (!result) {
+        let li = document.createElement('li');
+        li.innerText = 'No path found between those stations.';
+        document.getElementById('path-list').appendChild(li);
+        return;
+    }
+    const path = result[0];
+    // FIX: init prevLine to the first entry's line so the origin stop never says "switch to"
+    let prevLine = path.length > 0 ? path[0][1] : "";
+    for (let station of path) {
         let li = document.createElement('li');
         if (station[1] == prevLine) li.innerText = currentData.stations[station[0]].name;
-        else li.innerText = "switch to " + station[1] + " " +  currentData.stations[station[0]].name;
+        else li.innerText = "switch to " + station[1] + " " + currentData.stations[station[0]].name;
         prevLine = station[1];
         document.getElementById('path-list').appendChild(li);
     }
-    renderPath(path[0].map(e => e[0]));
+    renderPath(path.map(e => e[0]));
 }
 
 function goToTab(tab) {
@@ -656,6 +666,8 @@ function closeSide() {
 }
 
 function locate(x, z) {
+    // FIX: remove the previous marker before placing a new one so they don't accumulate
+    marker.remove();
     map.panTo([-z / projection, x / projection])
     marker = L.marker([-z / projection, x / projection]).addTo(map)
 }
@@ -721,5 +733,6 @@ document.getElementById('custom-data').addEventListener('change', () => {
 })
 
 window.addEventListener('click', (e) => {
-    if (!document.getElementById('filters').contains(e.target)) document.getElementById('filters').zIndex = -2
+    // FIX: was `filters.zIndex = -2` (sets a JS property, not CSS); must use .style.zIndex
+    if (!document.getElementById('filters').contains(e.target)) document.getElementById('filters').style.zIndex = -2
 })

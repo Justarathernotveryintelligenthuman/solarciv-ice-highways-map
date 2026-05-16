@@ -55,10 +55,11 @@
                 Use the pathfinder to find the shortest path between two stations (Might be inaccurate).</p>
                 <br>
                 <label for="start">Start station ID:</label>
-                <input id="start-station" name="start" type="number"></inpu>
+                <!-- FIX: was </inpu> (malformed closing tag) -->
+                <input id="start-station" name="start" type="number">
                 <br><br>
                 <label for="end">End station ID:</label>
-                <input id="end-station" name="end" type="number"></input>
+                <input id="end-station" name="end" type="number">
                 <br><br>
                 <button onclick="findPath(document.getElementById('start-station').value, document.getElementById('end-station').value)">Find path</button>
                 <div id="path-list">
